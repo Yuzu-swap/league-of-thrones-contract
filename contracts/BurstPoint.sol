@@ -1,3 +1,4 @@
+pragma experimental ABIEncoderV2;
 pragma solidity 0.6.12;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -43,11 +44,12 @@ contract BurstPoint is Ownable{
     //player can escape after bet end and last 100 blockNumber
     uint256 public gameLast = 100;
 
-    
+    //BurstValue increase 10 perBlock
+    uint256 public increasePerBlock = 10;
 
 
     constructor() public onlyOwner{
-        
+
     }
 
 
@@ -112,7 +114,10 @@ contract BurstPoint is Ownable{
                 playerGuess = r.burstValue;
             }
             else if(r.status == BRecordStatus.Escape){
-                playerGuess = ( r.escapeBlockNum - id - betLast) * ( r.burstValue - multiple ) / gameLast + multiple ;
+                playerGuess = ( r.escapeBlockNum - id - betLast) * increasePerBlock + multiple ;
+                if( playerGuess > r.burstValue){
+                    playerGuess = r.burstValue
+                }
             }
 
             if(playerGuess <= burstValue){
@@ -121,6 +126,17 @@ contract BurstPoint is Ownable{
             }
         }
         gameRecord.status = GRecordStatus.Closed;
+    }
+
+    function getGameRecords(uint256 id) external view returns(address[] memory, BetRecord[] memory){
+        GameRecord storage gameRecord =  gameRecords[id];
+        address[] memory playerAddresses = gameRecord.playerAddresses;
+        BetRecord[] memory records = new BetRecord[](playerAddresses.length);
+        for(uint i = 0; i < playerAddresses.length; i++){
+            BetRecord memory r = gameRecord.betRecords[playerAddresses[i]];
+            records[i] = r;
+        }
+        return (playerAddresses, records);
     }
 
 

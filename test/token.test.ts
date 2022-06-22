@@ -56,6 +56,9 @@ describe("Token contract", function() {
     const addr1blance = await ethers.provider.getBalance(addr1.address);
     console.log(addr1blance);
 
+    const aaa = await hardhatToken.getGameRecords(0);
+    console.log(aaa);
+
     //expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
   });
 });
