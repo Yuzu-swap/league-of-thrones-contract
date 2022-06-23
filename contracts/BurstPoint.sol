@@ -116,7 +116,7 @@ contract BurstPoint is Ownable{
             else if(r.status == BRecordStatus.Escape){
                 playerGuess = ( r.escapeBlockNum - id - betLast) * increasePerBlock + multiple ;
                 if( playerGuess > r.burstValue){
-                    playerGuess = r.burstValue
+                    playerGuess = r.burstValue;
                 }
             }
 
