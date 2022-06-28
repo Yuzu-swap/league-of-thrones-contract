@@ -30,7 +30,8 @@ describe("Token contract", function() {
     // console.log(strRe);
 
     const str = "300test";
-    console.log(sha256(encodeParameters(["string"],[str])));
+    console.log(encodeParameters(["string"],[str]));
+    console.log(sha256(encodeParameters(["string"],[str])).toString());
     await hardhatToken.beginGame(0, sha256(encodeParameters(["string"],[str])));
 
     await hardhatToken.connect(addr1).bet(0, 200, {value: 100});
