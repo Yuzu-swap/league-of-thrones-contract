@@ -26,6 +26,10 @@ describe("Token contract", function() {
       // THIS LINE NEVER GETS HIT
       console.log('###########', address, tokenId)
     })
+    LeagueCon.on('signUpInfo', ( seasonId, address, unionId, generalIds) => {
+      // THIS LINE NEVER GETS HIT
+      console.log('###########', seasonId, address, unionId, generalIds)
+    })
     await LeagueCon.setNFTAddress(1, nft1.address, nft2.address);
     await LeagueCon.signUpGame(1, 1, 12);
     const result1 = await LeagueCon.getSeasonStatus(1);
