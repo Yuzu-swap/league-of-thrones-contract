@@ -8,35 +8,78 @@ import { expect } from "chai";
 
 describe("Token contract", function() {
   it("Deployment should assign the total supply of tokens to the owner", async function() {
-    const [owner, addr1] = await ethers.getSigners();
+    const [owner, addr1, addr2, addr3, addr4] = await ethers.getSigners();
 
     const NFT1 = await ethers.getContractFactory("TestNFT");
     const NFT2 = await ethers.getContractFactory("TestNFT");
     const League = await ethers.getContractFactory("LeagueOfThrones")
+    const YUZUToken = await ethers.getContractFactory("YUZUToken")
 
     const nft1 = await NFT1.deploy();
     const nft2 = await NFT2.deploy();
     const LeagueCon = await League.deploy();
 
+    LeagueCon.on('signUpInfo', ( seasonId, address, unionId, generalIds) => {
+      // THIS LINE NEVER GETS HIT
+      console.log('signUpInfo', seasonId, address, unionId, generalIds)
+    })
+    LeagueCon.on('sendRankRewardInfo', ( seasonId, playerAddress, rank, amount) => {
+      // THIS LINE NEVER GETS HIT
+      console.log('sendRankRewardInfo', seasonId, playerAddress, rank, amount)
+    })
+    LeagueCon.on('sendUnionRewardInfo', ( seasonId, playerAddress, glory, amount) => {
+      // THIS LINE NEVER GETS HIT
+      console.log('sendUnionRewardInfo', seasonId, playerAddress, glory, amount)
+    })
+
+    const yuzu = await YUZUToken.deploy();
+
+    const baseValue = ethers.BigNumber.from("1000000000000000000")
+    
+    let a = ethers.BigNumber.from("200")
+    await yuzu.mint(owner.address, a.mul(baseValue))
+
+    await yuzu.approve(LeagueCon.address, a.mul(baseValue))
+
+    const startTx = await LeagueCon.startSeason(1, yuzu.address, 400, 500, [1, 1, 2, 3], [300, 100])
+    await startTx.wait()
+
+    console.log(" league amount ", await yuzu.balanceOf(LeagueCon.address))
+
     const TokenId1 = await nft1.mint(owner.address , "test1")
     const TokenId2 = await nft2.mint(owner.address , "test1")
     const recipt1 = await TokenId1.wait()
     const recipt2 = await TokenId2.wait()
-    nft1.on('logTest', (address , tokenId) => {
-      // THIS LINE NEVER GETS HIT
-      console.log('###########', address, tokenId)
-    })
-    LeagueCon.on('signUpInfo', ( seasonId, address, unionId, generalIds) => {
-      // THIS LINE NEVER GETS HIT
-      console.log('###########', seasonId, address, unionId, generalIds)
-    })
     await LeagueCon.setNFTAddress(1, nft1.address, nft2.address);
     await LeagueCon.signUpGame(1, 1, 12);
+    await LeagueCon.connect(addr1).signUpGame(1, 1, 12);
+    await LeagueCon.connect(addr2).signUpGame(1, 1, 12);
+    await LeagueCon.connect(addr3).signUpGame(1, 1, 12);
+    await LeagueCon.connect(addr4).signUpGame(1, 1, 12);
+    const endTx = await LeagueCon.endSeason(
+      1, 
+      1,
+      [owner.address, addr1.address, addr2.address ,addr4.address],
+      [4, 3, 3, 1 ],
+      5)
+    await endTx.wait()
+
+    console.log(
+      "end query",
+      await yuzu.balanceOf(owner.address),
+      await yuzu.balanceOf(addr1.address), 
+      await yuzu.balanceOf(addr2.address), 
+      await yuzu.balanceOf(addr4.address),
+      await yuzu.balanceOf(LeagueCon.address)
+      )
+
     const result1 = await LeagueCon.getSeasonStatus(1);
     console.log( "getSeasonStatus",  result1)
 
     const result2 = await LeagueCon.getSignUpInfo(1, owner.address)
     console.log( "getSignUpInfo",  result2)
+
+
 
     //console.log( "tokenId1" , recipt1, "tokenId2", recipt2)
 
