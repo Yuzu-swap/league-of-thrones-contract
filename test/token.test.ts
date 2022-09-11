@@ -10,6 +10,15 @@ describe("Token contract", function() {
   it("Deployment should assign the total supply of tokens to the owner", async function() {
     const [owner, addr1, addr2, addr3, addr4] = await ethers.getSigners();
 
+    const extraUserNum = 300;
+
+    const extraWallet = []
+    
+    let playerAddresses = [owner.address, addr1.address, addr2.address ,addr4.address]
+    let glorys =  [4, 3, 3, 1 ]
+    let unionGlory = 5
+    
+
     const NFT1 = await ethers.getContractFactory("TestNFT");
     const NFT2 = await ethers.getContractFactory("TestNFT");
     const League = await ethers.getContractFactory("LeagueOfThrones")
@@ -56,13 +65,36 @@ describe("Token contract", function() {
     await LeagueCon.connect(addr2).signUpGame(1, 1, 12);
     await LeagueCon.connect(addr3).signUpGame(1, 1, 12);
     await LeagueCon.connect(addr4).signUpGame(1, 1, 12);
+    let unionId = 1;
+    for( let i=0; i < extraUserNum; i++){
+      // Get a new wallet
+      unionId ++ 
+      if(unionId == 5){
+        unionId = 1
+      }
+      let wallet = ethers.Wallet.createRandom();
+      // add the provider from Hardhat
+      wallet =  wallet.connect(ethers.provider);
+      // send ETH to the new wallet so it can perform a tx
+      await owner.sendTransaction({to: wallet.address, value: ethers.utils.parseEther("1")});
+      await LeagueCon.connect(wallet).signUpGame(1, 1, 12)
+      extraWallet.push( wallet )
+      if(unionId == 1){
+        playerAddresses.push(wallet.address)
+        glorys.push(1)
+        unionGlory += 1
+      }
+    }
+   
     const endTx = await LeagueCon.endSeason(
       1, 
       1,
-      [owner.address, addr1.address, addr2.address ,addr4.address],
-      [4, 3, 3, 1 ],
-      5)
-    await endTx.wait()
+      playerAddresses,
+      glorys,
+      unionGlory)
+   
+    const recipt = await endTx.wait()
+    console.log("endTx",endTx, recipt.gasUsed)
 
     console.log(
       "end query",
