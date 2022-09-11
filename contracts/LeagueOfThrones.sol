@@ -40,6 +40,7 @@ struct SeasonRecord{
     uint256 reward2Amount;
     uint256[] rankConfigFromTo;
     uint256[] rankConfigValue;
+    uint256[] seasonTimeConfig;
     SeasonStatus seasonStatus;
 }
 
@@ -56,7 +57,7 @@ struct SeasonStatusResult{
 contract LeagueOfThrones is Ownable{
 
     event signUpInfo(uint256 seasonId, address player, uint256 unionId, uint256[] extraGeneralIds);
-    event seasonStartInfo(uint256 seasonId , address rewardAddress, uint256 rewardAmount1, uint256 rewardAmount2, uint256[] rankConfigFromTo, uint256[] rankConfigValue);
+    event startSeasonInfo(uint256 seasonId , address rewardAddress, uint256 rewardAmount1, uint256 rewardAmount2, uint256[] rankConfigFromTo, uint256[] rankConfigValue, uint256[] seasonTimeConfig);
     event endSeasonInfo( uint256 seasonId, uint256 unionId, address[] playerAddresses, uint256[] glorys, uint256 unionSumGlory);
     event sendRankRewardInfo( uint256 seasonId, address player, uint256 rank, uint256 amount);
     event sendUnionRewardInfo( uint256 seasonId, address player, uint256 glory, uint256 amount);
@@ -74,7 +75,8 @@ contract LeagueOfThrones is Ownable{
         uint256 rewardAmount1, 
         uint256 rewardAmount2, 
         uint256[] memory rankConfigFromTo,
-        uint256[] memory rankConfigValue
+        uint256[] memory rankConfigValue,
+        uint256[] memory seasonTimeConfig
         ) external onlyOwner {
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Invalid, "Season can not start repeat");
@@ -89,7 +91,8 @@ contract LeagueOfThrones is Ownable{
         sRecord.reward2Amount = rewardAmount2;
         sRecord.rankConfigFromTo = rankConfigFromTo;
         sRecord.rankConfigValue = rankConfigValue;
-        emit seasonStartInfo(seasonId, rewardAddress, rewardAmount1, rewardAmount2, rankConfigFromTo, rankConfigValue);
+        sRecord.seasonTimeConfig = seasonTimeConfig;
+        emit startSeasonInfo(seasonId, rewardAddress, rewardAmount1, rewardAmount2, rankConfigFromTo, rankConfigValue, seasonTimeConfig);
     }
 
     //set nft address of season

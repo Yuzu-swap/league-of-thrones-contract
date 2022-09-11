@@ -50,7 +50,7 @@ describe("Token contract", function() {
 
     await yuzu.approve(LeagueCon.address, a.mul(baseValue))
 
-    const startTx = await LeagueCon.startSeason(1, yuzu.address, 400, 500, [1, 1, 2, 3], [300, 100])
+    const startTx = await LeagueCon.startSeason(1, yuzu.address, 400, 500, [1, 1, 2, 3], [300, 100], [])
     await startTx.wait()
 
     console.log(" league amount ", await yuzu.balanceOf(LeagueCon.address))
