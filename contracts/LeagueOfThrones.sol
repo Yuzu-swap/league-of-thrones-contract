@@ -39,6 +39,7 @@ struct SeasonRecord{
     uint256 reward2Amount;
     uint256[] rankConfigFromTo;
     uint256[] rankConfigValue;
+    //reservation open ready end
     uint256[] seasonTimeConfig;
     SeasonStatus seasonStatus;
 }
@@ -79,6 +80,7 @@ contract LeagueOfThrones is Ownable{
         ) external onlyOwner {
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Invalid, "Season can not start repeat");
+        require(seasonTimeConfig.length == 4, "time config length error" );
         IERC20 token = IERC20(rewardAddress);
         uint256 rewordAmount = rewardAmount1 + rewardAmount2;
         uint256 allowance = token.allowance(msg.sender, address(this));
@@ -112,6 +114,7 @@ contract LeagueOfThrones is Ownable{
     function signUpGame(uint256 seasonId, uint256 ntf1TokenId, uint256 ntf2TokenId) external{
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Pending, "Season Status Error");
+        require( block.timestamp >= sRecord.seasonTimeConfig[0] && block.timestamp <= sRecord.seasonTimeConfig[1], "It is not signUp time now");
         bool hasSignUp = false;
         for( uint i = 1 ; i <= 4 ; i ++ ){
             UnionRecord storage unionRecord = sRecord.unionRecords[i];
