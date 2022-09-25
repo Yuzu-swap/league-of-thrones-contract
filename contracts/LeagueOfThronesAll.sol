@@ -490,6 +490,7 @@ struct SeasonRecord{
     address ntf1ContractAddress;
     address ntf2ContractAddress;
     address rewardAddress;
+    uint256 playerLimit;
     uint256 reward1Amount;
     uint256 reward2Amount;
     uint256[] rankConfigFromTo;
@@ -511,21 +512,22 @@ struct SeasonStatusResult{
 
 contract LeagueOfThrones is Ownable{
 
-    event signUpInfo(uint256 seasonId, address player, uint256 unionId, uint256[] extraGeneralIds);
-    event startSeasonInfo(uint256 seasonId , address rewardAddress, uint256 rewardAmount1, uint256 rewardAmount2, uint256[] rankConfigFromTo, uint256[] rankConfigValue, uint256[] seasonTimeConfig);
-    event endSeasonInfo( uint256 seasonId, uint256 unionId, address[] playerAddresses, uint256[] glorys, uint256 unionSumGlory);
-    event sendRankRewardInfo( uint256 seasonId, address player, uint256 rank, uint256 amount);
-    event sendUnionRewardInfo( uint256 seasonId, address player, uint256 glory, uint256 amount);
-    mapping(uint256 => SeasonRecord) seasonRecords;
-    uint256 public nowSeasonId;
+    event signUpInfo( string seasonId, address player, uint256 unionId, uint256[] extraGeneralIds);
+    event startSeasonInfo( string seasonId, uint256 playerLimit, address rewardAddress, uint256 rewardAmount1, uint256 rewardAmount2, uint256[] rankConfigFromTo, uint256[] rankConfigValue, uint256[] seasonTimeConfig);
+    event endSeasonInfo( string seasonId, uint256 unionId, address[] playerAddresses, uint256[] glorys, uint256 unionSumGlory);
+    event sendRankRewardInfo( string seasonId, address player, uint256 rank, uint256 amount);
+    event sendUnionRewardInfo( string seasonId, address player, uint256 glory, uint256 amount);
+    mapping( string => SeasonRecord) seasonRecords;
+    string public nowSeasonId;
 
     constructor() public onlyOwner{
-        nowSeasonId = 0;
+        nowSeasonId = "";
     }
 
     //start season and transfer reward to contract
     function startSeason(
-        uint256 seasonId ,
+        string memory seasonId,
+        uint256 playerLimit,
         address rewardAddress,
         uint256 rewardAmount1, 
         uint256 rewardAmount2, 
@@ -545,14 +547,28 @@ contract LeagueOfThrones is Ownable{
         sRecord.rewardAddress = rewardAddress;
         sRecord.reward1Amount = rewardAmount1;
         sRecord.reward2Amount = rewardAmount2;
+        sRecord.playerLimit = playerLimit;
+        require(rankConfigFromTo.length == rankConfigValue.length * 2, "rewardConfig length error");
+        uint256 sumReward = 0;
+        bool indexRight = true;
+        uint256 lastEnd = 0;
+        for(uint256 i = 0; i < rankConfigValue.length; i++){
+            if(rankConfigFromTo[i * 2] != lastEnd + 1){
+                indexRight = false;
+                break;
+            }
+            lastEnd = rankConfigFromTo[i * 2 + 1];
+            sumReward += ((rankConfigFromTo[i * 2 + 1] - rankConfigFromTo[i * 2 ] + 1) * rankConfigValue[i]);
+        }
+        require(indexRight && sumReward == rewardAmount2, "reward config error");
         sRecord.rankConfigFromTo = rankConfigFromTo;
         sRecord.rankConfigValue = rankConfigValue;
         sRecord.seasonTimeConfig = seasonTimeConfig;
-        emit startSeasonInfo(seasonId, rewardAddress, rewardAmount1, rewardAmount2, rankConfigFromTo, rankConfigValue, seasonTimeConfig);
+        emit startSeasonInfo(seasonId, playerLimit, rewardAddress, rewardAmount1, rewardAmount2, rankConfigFromTo, rankConfigValue, seasonTimeConfig);
     }
 
     //set nft address of season
-    function setNFTAddress(uint256 seasonId, address ntf1Address, address ntf2Address) external onlyOwner {
+    function setNFTAddress(string memory seasonId, address ntf1Address, address ntf2Address) external onlyOwner {
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.WaitForNTF, "Season Haven't begin or NTF have set");
         sRecord.seasonStatus = SeasonStatus.Pending;
@@ -566,10 +582,11 @@ contract LeagueOfThrones is Ownable{
             msg.sender))) % number;
     }
 
-    function signUpGame(uint256 seasonId, uint256 ntf1TokenId, uint256 ntf2TokenId) external{
+    function signUpGame(string memory seasonId, uint256 ntf1TokenId, uint256 ntf2TokenId) external{
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Pending, "Season Status Error");
         require( block.timestamp >= sRecord.seasonTimeConfig[0] && block.timestamp <= sRecord.seasonTimeConfig[1], "It is not signUp time now");
+        require( sRecord.sumPlayers < sRecord.playerLimit, "the number of players has reached the limit");
         bool hasSignUp = false;
         for( uint i = 1 ; i <= 4 ; i ++ ){
             UnionRecord storage unionRecord = sRecord.unionRecords[i];
@@ -622,7 +639,7 @@ contract LeagueOfThrones is Ownable{
         emit signUpInfo(seasonId , msg.sender, unionId, extraIds.generalIds);
     }
 
-    function getSeasonStatus( uint256 seasonId ) public view returns ( SeasonStatusResult memory ){
+    function getSeasonStatus( string memory seasonId ) public view returns ( SeasonStatusResult memory ){
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Pending, "Season Status Error");
         SeasonStatusResult memory re = SeasonStatusResult( sRecord.sumPlayers , new uint256[](4));
@@ -638,7 +655,7 @@ contract LeagueOfThrones is Ownable{
         return re;
     } 
 
-    function getSignUpInfo( uint256 seasonId, address playerAddress) public view returns ( SeaSonInfoResult memory){
+    function getSignUpInfo( string memory seasonId, address playerAddress) public view returns ( SeaSonInfoResult memory){
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus != SeasonStatus.Invalid, "Season Status Error");
         SeaSonInfoResult memory re = SeaSonInfoResult(0, new uint256[](0));
@@ -659,7 +676,7 @@ contract LeagueOfThrones is Ownable{
         return re;
     }
 
-    function endSeason( uint256 seasonId, uint256 unionId, address[] memory playerAddresses, uint256[] memory glorys, uint256 unionSumGlory) external onlyOwner {
+    function endSeason(  string memory seasonId, uint256 unionId, address[] memory playerAddresses, uint256[] memory glorys, uint256 unionSumGlory) external onlyOwner {
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Pending,  "Season Status Error");
         require(playerAddresses.length == glorys.length, "input array length do not equal");

@@ -10,7 +10,7 @@ describe("Token contract", function() {
   it("Deployment should assign the total supply of tokens to the owner", async function() {
     const [owner, addr1, addr2, addr3, addr4] = await ethers.getSigners();
 
-    const extraUserNum = 300;
+    const extraUserNum = 200;
 
     const extraWallet = []
     
@@ -21,16 +21,16 @@ describe("Token contract", function() {
 
     const NFT1 = await ethers.getContractFactory("TestNFT");
     const NFT2 = await ethers.getContractFactory("TestNFT");
-    const League = await ethers.getContractFactory("LeagueOfThrones")
+    const League = await ethers.getContractFactory("contracts/LeagueOfThrones.sol:LeagueOfThrones")
     const YUZUToken = await ethers.getContractFactory("YUZUToken")
 
     const nft1 = await NFT1.deploy();
     const nft2 = await NFT2.deploy();
     const LeagueCon = await League.deploy();
 
-    LeagueCon.on('signUpInfo', ( seasonId, address, unionId, generalIds) => {
+    LeagueCon.on('signUpInfo', ( seasonId, playerLimit ,address, unionId, generalIds) => {
       // THIS LINE NEVER GETS HIT
-      console.log('signUpInfo', seasonId, address, unionId, generalIds)
+      console.log('signUpInfo', seasonId, playerLimit, address, unionId, generalIds)
     })
     LeagueCon.on('sendRankRewardInfo', ( seasonId, playerAddress, rank, amount) => {
       // THIS LINE NEVER GETS HIT
@@ -50,7 +50,11 @@ describe("Token contract", function() {
 
     await yuzu.approve(LeagueCon.address, a.mul(baseValue))
 
-    const startTx = await LeagueCon.startSeason(1, yuzu.address, 400, 500, [1, 1, 2, 3], [300, 100], [])
+    const startTx = await LeagueCon.startSeason(
+      "test:one", 300 ,yuzu.address, 5000, 5000, 
+      [1, 1, 2, 2, 3, 3, 4, 5, 6, 10, 11, 20], 
+      [1100, 800, 500, 300, 200, 100], 
+      [1664106109, 1664107109, 1664107109, 1664107109])
     await startTx.wait()
 
     console.log(" league amount ", await yuzu.balanceOf(LeagueCon.address))
@@ -59,12 +63,12 @@ describe("Token contract", function() {
     const TokenId2 = await nft2.mint(owner.address , "test1")
     const recipt1 = await TokenId1.wait()
     const recipt2 = await TokenId2.wait()
-    await LeagueCon.setNFTAddress(1, nft1.address, nft2.address);
-    await LeagueCon.signUpGame(1, 1, 12);
-    await LeagueCon.connect(addr1).signUpGame(1, 1, 12);
-    await LeagueCon.connect(addr2).signUpGame(1, 1, 12);
-    await LeagueCon.connect(addr3).signUpGame(1, 1, 12);
-    await LeagueCon.connect(addr4).signUpGame(1, 1, 12);
+    await LeagueCon.setNFTAddress("test:one", nft1.address, nft2.address);
+    await LeagueCon.signUpGame("test:one", 1, 12);
+    await LeagueCon.connect(addr1).signUpGame("test:one", 1, 12);
+    await LeagueCon.connect(addr2).signUpGame("test:one", 1, 12);
+    await LeagueCon.connect(addr3).signUpGame("test:one", 1, 12);
+    await LeagueCon.connect(addr4).signUpGame("test:one", 1, 12);
     let unionId = 1;
     for( let i=0; i < extraUserNum; i++){
       // Get a new wallet
@@ -77,7 +81,7 @@ describe("Token contract", function() {
       wallet =  wallet.connect(ethers.provider);
       // send ETH to the new wallet so it can perform a tx
       await owner.sendTransaction({to: wallet.address, value: ethers.utils.parseEther("1")});
-      await LeagueCon.connect(wallet).signUpGame(1, 1, 12)
+      await LeagueCon.connect(wallet).signUpGame("test:one", 1, 12)
       extraWallet.push( wallet )
       if(unionId == 1){
         playerAddresses.push(wallet.address)
@@ -87,7 +91,7 @@ describe("Token contract", function() {
     }
    
     const endTx = await LeagueCon.endSeason(
-      1, 
+      "test:one", 
       1,
       playerAddresses,
       glorys,
@@ -105,10 +109,10 @@ describe("Token contract", function() {
       await yuzu.balanceOf(LeagueCon.address)
       )
 
-    const result1 = await LeagueCon.getSeasonStatus(1);
+    const result1 = await LeagueCon.getSeasonStatus("test:one");
     console.log( "getSeasonStatus",  result1)
 
-    const result2 = await LeagueCon.getSignUpInfo(1, owner.address)
+    const result2 = await LeagueCon.getSignUpInfo("test:one", owner.address)
     console.log( "getSignUpInfo",  result2)
 
 
