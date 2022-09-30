@@ -10,7 +10,7 @@ describe("Token contract", function() {
   it("Deployment should assign the total supply of tokens to the owner", async function() {
     const [owner, addr1, addr2, addr3, addr4] = await ethers.getSigners();
 
-    const extraUserNum = 200;
+    const extraUserNum = 10;
 
     const extraWallet = []
     
@@ -21,16 +21,21 @@ describe("Token contract", function() {
 
     const NFT1 = await ethers.getContractFactory("TestNFT");
     const NFT2 = await ethers.getContractFactory("TestNFT");
-    const League = await ethers.getContractFactory("contracts/LeagueOfThrones.sol:LeagueOfThrones")
+    //const League = await ethers.getContractFactory("contracts/LeagueOfThrones.sol:LeagueOfThrones")
+    const League = await ethers.getContractFactory("contracts/LeagueOfThronesV1.sol:LeagueOfThrones")
     const YUZUToken = await ethers.getContractFactory("YUZUToken")
 
     const nft1 = await NFT1.deploy();
     const nft2 = await NFT2.deploy();
     const LeagueCon = await League.deploy();
-
-    LeagueCon.on('signUpInfo', ( seasonId, playerLimit ,address, unionId, generalIds) => {
+    LeagueCon.on('rechargeInfo', ( seasonId, playerAddress, amount, totalAmount) => {
       // THIS LINE NEVER GETS HIT
-      console.log('signUpInfo', seasonId, playerLimit, address, unionId, generalIds)
+      console.log('rechargeInfo', seasonId, playerAddress, amount, totalAmount)
+    })
+
+    LeagueCon.on('signUpInfo', ( seasonId, address, unionId, generalIds) => {
+      // THIS LINE NEVER GETS HIT
+      console.log('signUpInfo', seasonId, address, unionId, generalIds)
     })
     LeagueCon.on('sendRankRewardInfo', ( seasonId, playerAddress, rank, amount) => {
       // THIS LINE NEVER GETS HIT
@@ -41,6 +46,8 @@ describe("Token contract", function() {
       console.log('sendUnionRewardInfo', seasonId, playerAddress, glory, amount)
     })
 
+    await new Promise(res => setTimeout(() => res(null), 4000));
+
     const yuzu = await YUZUToken.deploy();
 
     const baseValue = ethers.BigNumber.from("1000000000000000000")
@@ -49,12 +56,13 @@ describe("Token contract", function() {
     await yuzu.mint(owner.address, a.mul(baseValue))
 
     await yuzu.approve(LeagueCon.address, a.mul(baseValue))
+    let now = parseInt(new Date().getTime() / 1000 + '')
 
     const startTx = await LeagueCon.startSeason(
       "test:one", 300 ,yuzu.address, 5000, 5000, 
       [1, 1, 2, 2, 3, 3, 4, 5, 6, 10, 11, 20], 
       [1100, 800, 500, 300, 200, 100], 
-      [1664106109, 1664107109, 1664107109, 1664107109])
+      [now, now+ 3600 , now+ 3600, now+ 3600])
     await startTx.wait()
 
     console.log(" league amount ", await yuzu.balanceOf(LeagueCon.address))
@@ -65,6 +73,24 @@ describe("Token contract", function() {
     const recipt2 = await TokenId2.wait()
     await LeagueCon.setNFTAddress("test:one", nft1.address, nft2.address);
     await LeagueCon.signUpGame("test:one", 1, 12);
+    await LeagueCon.setRechargeToken("test:one", yuzu.address)
+    console.log(
+      "before recharge",
+      await yuzu.balanceOf(owner.address)
+      )
+
+    let rechargeTx = await LeagueCon.recharge("test:one", 10000000000)
+    let receipt = await rechargeTx.wait()
+
+    for (const event of receipt.events) {
+      console.log(`Event ${event.event} with args ${event.args}`);
+    }
+    console.log(
+      "after recharge",
+      await yuzu.balanceOf(owner.address)
+      )
+
+    console.log("recharge Info", await LeagueCon.getRechargeInfo("test:one", owner.address))
     await LeagueCon.connect(addr1).signUpGame("test:one", 1, 12);
     await LeagueCon.connect(addr2).signUpGame("test:one", 1, 12);
     await LeagueCon.connect(addr3).signUpGame("test:one", 1, 12);
@@ -98,7 +124,7 @@ describe("Token contract", function() {
       unionGlory)
    
     const recipt = await endTx.wait()
-    console.log("endTx",endTx, recipt.gasUsed)
+    //console.log("endTx",endTx, recipt.gasUsed)
 
     console.log(
       "end query",
@@ -165,7 +191,7 @@ describe("Token contract", function() {
     // console.log(aaa);
 
     //expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
-    await new Promise(res => setTimeout(() => res(null), 5000));
+    await new Promise(res => setTimeout(() => res(null), 4000));
   });
 });
 
