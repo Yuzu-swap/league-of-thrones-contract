@@ -652,6 +652,13 @@ contract LeagueOfThrones is Ownable{
         sRecord.rechargeAddress = tokenAddress;
     }
 
+    function getRechargeToken(string memory seasonId) public view returns( address ) {
+        SeasonRecord storage sRecord = seasonRecords[seasonId];
+        require(sRecord.seasonStatus == SeasonStatus.Pending, "Season Status Error");
+        require(sRecord.rechargeStatus == MappingStatus.Valid, "recharge token have not set");
+        return sRecord.rechargeAddress;
+    }
+
     function recharge(string memory seasonId, uint256 amount) public payable {
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Pending, "Season Status Error");
