@@ -1,6 +1,6 @@
 import { AbiCoder } from "@ethersproject/abi";
 import { sha256 } from "@ethersproject/sha2";
-import {encodeParameters} from "./utilities/index"
+import {ADDRESS_ZERO, encodeParameters} from "./utilities/index"
 import { advanceBlockTo } from "./utilities";
 import { ethers } from "hardhat";
 import { expect } from "chai";
@@ -74,12 +74,13 @@ describe("Token contract", function() {
     await LeagueCon.setNFTAddress("test:one", nft1.address, nft2.address);
     await LeagueCon.signUpGame("test:one", 1, 12);
     await LeagueCon.setRechargeToken("test:one", yuzu.address)
+    console.log("recharge info", await LeagueCon.getRechargeToken("test:one"))
     console.log(
       "before recharge",
       await yuzu.balanceOf(owner.address)
       )
 
-    let rechargeTx = await LeagueCon.recharge("test:one", 10000000000)
+    let rechargeTx = await LeagueCon.recharge("test:one", 1 ,10000000000, {value: 100000000})
     let receipt = await rechargeTx.wait()
 
     for (const event of receipt.events) {
@@ -124,7 +125,7 @@ describe("Token contract", function() {
       unionGlory)
    
     const recipt = await endTx.wait()
-    //console.log("endTx",endTx, recipt.gasUsed)
+    //console.log("endTx",endTx, recipt)
 
     console.log(
       "end query",
@@ -140,6 +141,18 @@ describe("Token contract", function() {
 
     const result2 = await LeagueCon.getSignUpInfo("test:one", owner.address)
     console.log( "getSignUpInfo",  result2)
+
+    const withdrawTx =  await LeagueCon.withdraw(yuzu.address, 5000001801)
+    const wdRecipt = await withdrawTx.wait()
+    console.log(
+      "end withdraw",
+      await yuzu.balanceOf(LeagueCon.address)
+      )
+    //await owner.sendTransaction({to: LeagueCon.address, value: ethers.utils.parseEther("1")});
+    console.log("before eth withdraw", await owner.provider?.getBalance(LeagueCon.address))
+    const withdrawTx1 =  await LeagueCon.withdraw( ADDRESS_ZERO , 60000000)
+    const wdRecipt1 = await withdrawTx1.wait()
+    console.log("after eth withdraw", await owner.provider?.getBalance(LeagueCon.address))
 
 
 

@@ -521,7 +521,7 @@ contract LeagueOfThrones is Ownable{
     event endSeasonInfo( string seasonId, uint256 unionId, address[] playerAddresses, uint256[] glorys, uint256 unionSumGlory);
     event sendRankRewardInfo( string seasonId, address player, uint256 rank, uint256 amount);
     event sendUnionRewardInfo( string seasonId, address player, uint256 glory, uint256 amount);
-    event rechargeInfo( string seasonId, address player, uint256 amount, uint256 totalAmount);
+    event rechargeInfo( string seasonId, address player, uint256 rechargeId,uint256 amount, uint256 totalAmount);
     mapping( string => SeasonRecord) seasonRecords;
     string public nowSeasonId;
 
@@ -659,29 +659,29 @@ contract LeagueOfThrones is Ownable{
         return sRecord.rechargeAddress;
     }
 
-    function recharge(string memory seasonId, uint256 amount) public payable {
+    function recharge(string memory seasonId, uint256 rechargeId ,uint256 amount) public payable {
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Pending, "Season Status Error");
         require(sRecord.rechargeStatus == MappingStatus.Valid, "recharge token have not set");
-        bool hasSignUp = false;
-        for( uint i = 1 ; i <= 4 ; i ++ ){
-            UnionRecord storage unionRecord = sRecord.unionRecords[i];
-            if(unionRecord.status == MappingStatus.Invalid ){
-                continue;
-            }
-            else{
-                ExtraGeneralIds storage extraIds =  unionRecord.playerExtraGeneralIds[msg.sender];
-                if(extraIds.status == MappingStatus.Valid){
-                    hasSignUp = true;
-                    break;
-                }
-            }
-        }
-        require(hasSignUp == true , "player have not signUp");
+        // bool hasSignUp = false;
+        // for( uint i = 1 ; i <= 4 ; i ++ ){
+        //     UnionRecord storage unionRecord = sRecord.unionRecords[i];
+        //     if(unionRecord.status == MappingStatus.Invalid ){
+        //         continue;
+        //     }
+        //     else{
+        //         ExtraGeneralIds storage extraIds =  unionRecord.playerExtraGeneralIds[msg.sender];
+        //         if(extraIds.status == MappingStatus.Valid){
+        //             hasSignUp = true;
+        //             break;
+        //         }
+        //     }
+        // }
+        // require(hasSignUp == true , "player have not signUp");
         if(sRecord.rechargeAddress == address(0x0)){
             sRecord.rechargeRecord[msg.sender] += msg.value;
             sRecord.sumRecharge += msg.value;
-            emit rechargeInfo(seasonId, msg.sender, msg.value, sRecord.rechargeRecord[msg.sender]);
+            emit rechargeInfo(seasonId, msg.sender, rechargeId, msg.value, sRecord.rechargeRecord[msg.sender]);
         }
         else{
             IERC20 token = IERC20(sRecord.rechargeAddress);
@@ -690,7 +690,7 @@ contract LeagueOfThrones is Ownable{
             token.transferFrom(msg.sender, address(this), amount);
             sRecord.rechargeRecord[msg.sender] += amount;
             sRecord.sumRecharge += amount;
-            emit rechargeInfo(seasonId, msg.sender, amount, sRecord.rechargeRecord[msg.sender]);
+            emit rechargeInfo(seasonId, msg.sender, rechargeId, amount, sRecord.rechargeRecord[msg.sender]);
         }
     }
 
@@ -768,5 +768,18 @@ contract LeagueOfThrones is Ownable{
             }
         }
         emit endSeasonInfo( seasonId,  unionId,  playerAddresses, glorys, unionSumGlory);
+    }
+
+    function withdraw( address tokenAddress, uint256 amount) external  onlyOwner{
+        if(tokenAddress == address(0x0)){
+            require(address(this).balance >=  amount, "balance is not enough");
+            payable(msg.sender).transfer(amount);
+        }
+        else{
+            IERC20 token = IERC20(tokenAddress);
+            uint256 balance = token.balanceOf(address(this));
+            require(balance >= amount, "balance is not enough");
+            token.transfer(msg.sender, amount);
+        }
     }
 }
