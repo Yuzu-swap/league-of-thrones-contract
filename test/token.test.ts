@@ -22,7 +22,7 @@ describe("Token contract", function() {
     const NFT1 = await ethers.getContractFactory("TestNFT");
     const NFT2 = await ethers.getContractFactory("TestNFT");
     //const League = await ethers.getContractFactory("contracts/LeagueOfThrones.sol:LeagueOfThrones")
-    const League = await ethers.getContractFactory("contracts/LeagueOfThronesV1.sol:LeagueOfThrones")
+    const League = await ethers.getContractFactory("contracts/LeagueOfThronesV2.sol:LeagueOfThrones")
     const YUZUToken = await ethers.getContractFactory("YUZUToken")
 
     const nft1 = await NFT1.deploy();
@@ -59,12 +59,13 @@ describe("Token contract", function() {
     let now = parseInt(new Date().getTime() / 1000 + '')
 
     const startTx = await LeagueCon.startSeason(
-      "test:one", 300 ,yuzu.address, 5000, 5000, 
+      "test:one", 300 ,/*yuzu.address*/ "0x0000000000000000000000000000000000000000" , 5000, 5000, 
       [1, 1, 2, 2, 3, 3, 4, 5, 6, 10, 11, 20], 
       [1100, 800, 500, 300, 200, 100], 
-      [now, now+ 3600 , now+ 3600, now+ 3600])
+      [now, now+ 3600 , now+ 3600, now+ 3600], { value: 10000 })
     await startTx.wait()
 
+  
     console.log(" league amount ", await yuzu.balanceOf(LeagueCon.address))
 
     const TokenId1 = await nft1.mint(owner.address , "test1")
@@ -72,6 +73,9 @@ describe("Token contract", function() {
     const recipt1 = await TokenId1.wait()
     const recipt2 = await TokenId2.wait()
     await LeagueCon.setNFTAddress("test:one", nft1.address, nft2.address);
+    
+    expect( (await LeagueCon.getNFTAddresses("test:one")).toString()).to.equal([nft1.address, nft2.address].toString())
+
     await LeagueCon.signUpGame("test:one", 1, 12);
     await LeagueCon.setRechargeToken("test:one", yuzu.address)
     console.log("recharge info", await LeagueCon.getRechargeToken("test:one"))
@@ -125,7 +129,7 @@ describe("Token contract", function() {
       unionGlory)
    
     const recipt = await endTx.wait()
-    //console.log("endTx",endTx, recipt)
+    console.log("endTx",endTx, recipt)
 
     console.log(
       "end query",
@@ -142,68 +146,19 @@ describe("Token contract", function() {
     const result2 = await LeagueCon.getSignUpInfo("test:one", owner.address)
     console.log( "getSignUpInfo",  result2)
 
-    const withdrawTx =  await LeagueCon.withdraw(yuzu.address, 5000001801)
-    const wdRecipt = await withdrawTx.wait()
-    console.log(
-      "end withdraw",
-      await yuzu.balanceOf(LeagueCon.address)
-      )
-    //await owner.sendTransaction({to: LeagueCon.address, value: ethers.utils.parseEther("1")});
-    console.log("before eth withdraw", await owner.provider?.getBalance(LeagueCon.address))
-    const withdrawTx1 =  await LeagueCon.withdraw( ADDRESS_ZERO , 60000000)
-    const wdRecipt1 = await withdrawTx1.wait()
-    console.log("after eth withdraw", await owner.provider?.getBalance(LeagueCon.address))
+    // const withdrawTx =  await LeagueCon.withdraw(yuzu.address, 5000001801)
+    // const wdRecipt = await withdrawTx.wait()
+    // console.log(
+    //   "end withdraw",
+    //   await yuzu.balanceOf(LeagueCon.address)
+    //   )
+    // await owner.sendTransaction({to: LeagueCon.address, value: ethers.utils.parseEther("1")});
+    // console.log("before eth withdraw", await owner.provider?.getBalance(LeagueCon.address))
+    // const withdrawTx1 =  await LeagueCon.withdraw( ADDRESS_ZERO , 60000000)
+    // const wdRecipt1 = await withdrawTx1.wait()
+    // console.log("after eth withdraw", await owner.provider?.getBalance(LeagueCon.address))
 
 
-
-    //console.log( "tokenId1" , recipt1, "tokenId2", recipt2)
-
-    // const ownerBalance = await hardhatToken.totalBalance();
-    // console.log(ownerBalance);
-    
-    // await hardhatToken.ownerAdd({value: 400})
-
-    // var ownerBalance1 = await hardhatToken.totalBalance();
-    // console.log(ownerBalance1);
-
-    // // const shaRe = await hardhatToken.testSha("300test");
-    // // console.log(shaRe);
-
-    // // const strRe = await hardhatToken.testStr(100, "test");
-    // // console.log(strRe);
-
-    // const str = "300test";
-    // console.log(encodeParameters(["string"],[str]));
-    // console.log(sha256(encodeParameters(["string"],[str])).toString());
-    // await hardhatToken.beginGame(0, sha256(encodeParameters(["string"],[str])));
-
-    // await hardhatToken.connect(addr1).bet(0, 200, {value: 100});
-
-    // await advanceBlockTo(50);
-
-    // await hardhatToken.connect(addr1).escape(0);
-
-
-    // ownerBalance1 = await hardhatToken.totalBalance();
-    // console.log(ownerBalance1);
-
-    // const addr1blance1 = await ethers.provider.getBalance(addr1.address);
-    // console.log(addr1blance1);
-
-    // await advanceBlockTo(111);
-
-    // await hardhatToken.closeGame(0, 300, "test");
-
-    // const ownerBalance2 = await hardhatToken.totalBalance();
-    // console.log(ownerBalance2);
-
-    // const addr1blance = await ethers.provider.getBalance(addr1.address);
-    // console.log(addr1blance);
-
-    // const aaa = await hardhatToken.getGameRecords(0);
-    // console.log(aaa);
-
-    //expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
     await new Promise(res => setTimeout(() => res(null), 4000));
   });
 });

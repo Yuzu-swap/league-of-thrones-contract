@@ -1,6 +1,10 @@
 const Web3 = require("web3")
 const ABI = require('../abi/MultiTransferHelper.json')
 
+
+const rewardStr = {"contractAddressInput":["0x7aaa84e9e0f9af03c45f346854a7f336181e89fb","0x19474fde19b47a36cc26ae93d46ebbcde83fa56c","0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2","0xa37b1a6905dfb2686ad0f6104d7358dfb1464b09","0x32aef35d6d3da5bdf8a008c42a5591694dac966c","0x92c9d3836f9f503355f234dec846b65786ab07be","0x0b4509f330ff558090571861a723f71657a26f78","0x4600086f015d3c995bbaeb61a978524268a8cae7"],"contractGloryInput":[558674,555960,338877,116514,45553,22742,14394,3910],"globalGloryRankInfo":[{"glory":558674,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"glory":555960,"unionId":3,"username":"0x19474fde19b47a36cc26ae93d46ebbcde83fa56c"},{"glory":338877,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":116514,"unionId":3,"username":"0xa37b1a6905dfb2686ad0f6104d7358dfb1464b09"},{"glory":45553,"unionId":1,"username":"0x32aef35d6d3da5bdf8a008c42a5591694dac966c"},{"glory":22742,"unionId":4,"username":"0x92c9d3836f9f503355f234dec846b65786ab07be"},{"glory":14394,"unionId":1,"username":"0x0b4509f330ff558090571861a723f71657a26f78"},{"glory":3910,"unionId":4,"username":"0x4600086f015d3c995bbaeb61a978524268a8cae7"}],"gloryRewardResult":[{"count":105,"glory":558674,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"count":80,"glory":555960,"unionId":3,"username":"0x19474fde19b47a36cc26ae93d46ebbcde83fa56c"},{"count":60,"glory":338877,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":50,"glory":116514,"unionId":3,"username":"0xa37b1a6905dfb2686ad0f6104d7358dfb1464b09"},{"count":40,"glory":45553,"unionId":1,"username":"0x32aef35d6d3da5bdf8a008c42a5591694dac966c"},{"count":30,"glory":22742,"unionId":4,"username":"0x92c9d3836f9f503355f234dec846b65786ab07be"},{"count":30,"glory":14394,"unionId":1,"username":"0x0b4509f330ff558090571861a723f71657a26f78"},{"count":20,"glory":3910,"unionId":4,"username":"0x4600086f015d3c995bbaeb61a978524268a8cae7"}],"id":"rewardglobalstate","seasonEnd":true,"unionGloryRankInfo":[[{"glory":45553,"unionId":1,"username":"0x32aef35d6d3da5bdf8a008c42a5591694dac966c"},{"glory":14394,"unionId":1,"username":"0x0b4509f330ff558090571861a723f71657a26f78"}],[],[{"glory":558674,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"glory":555960,"unionId":3,"username":"0x19474fde19b47a36cc26ae93d46ebbcde83fa56c"},{"glory":338877,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":116514,"unionId":3,"username":"0xa37b1a6905dfb2686ad0f6104d7358dfb1464b09"}],[{"glory":22742,"unionId":4,"username":"0x92c9d3836f9f503355f234dec846b65786ab07be"},{"glory":3910,"unionId":4,"username":"0x4600086f015d3c995bbaeb61a978524268a8cae7"}]],"unionGlorySum":1570025,"unionRewardResult":[{"count":177.91882294867915,"glory":558674,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"count":177.05450550150476,"glory":555960,"unionId":3,"username":"0x19474fde19b47a36cc26ae93d46ebbcde83fa56c"},{"count":107.92089297941115,"glory":338877,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":37.10577857040493,"glory":116514,"unionId":3,"username":"0xa37b1a6905dfb2686ad0f6104d7358dfb1464b09"}],"unionWinId":3}
+
+
 function outputReward(type, addressList, reward)
 {
     console.log(type)
@@ -17,71 +21,49 @@ function outputReward(type, addressList, reward)
     console.log(re)
 }
 
-
-const rewardStr = {"contractAddressInput":["0xbd7da5cc162ccc58502eb93361e157ce19a32fd8","0x678452d7a5199a0d6216affb3ecf9ff9adb83d80","0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2","0x6f721d423e5b97f9740ad404371c48dce4a9c173","0x19474fde19b47a36cc26ae93d46ebbcde83fa56c","0x7aaa84e9e0f9af03c45f346854a7f336181e89fb","0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2","0x7aaa84e9e0f9af03c45f346854a7f336181e89fb","0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2","0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2","0x44a0ab343ba3c4d86e2eb7835ee995a22c6a72fb","0x7aaa84e9e0f9af03c45f346854a7f336181e89fb","0xb4c18d231d6f50eae516581a385b255b802b9e03"],"contractGloryInput":[922883,219403,187557,177091,106003,103564,99398,84614,63736,52550,44062,38537,30169],"globalGloryRankInfo":[{"glory":922883,"unionId":3,"username":"0xbd7da5cc162ccc58502eb93361e157ce19a32fd8"},{"glory":219403,"unionId":3,"username":"0x678452d7a5199a0d6216affb3ecf9ff9adb83d80"},{"glory":187557,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":177091,"unionId":3,"username":"0x6f721d423e5b97f9740ad404371c48dce4a9c173"},{"glory":106003,"unionId":3,"username":"0x19474fde19b47a36cc26ae93d46ebbcde83fa56c"},{"glory":103564,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"glory":99398,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":84614,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"glory":63736,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":52550,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":44062,"unionId":2,"username":"0x44a0ab343ba3c4d86e2eb7835ee995a22c6a72fb"},{"glory":38537,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"glory":30169,"unionId":3,"username":"0xb4c18d231d6f50eae516581a385b255b802b9e03"}],"gloryRewardResult":[{"count":105,"glory":922883,"unionId":3,"username":"0xbd7da5cc162ccc58502eb93361e157ce19a32fd8"},{"count":80,"glory":219403,"unionId":3,"username":"0x678452d7a5199a0d6216affb3ecf9ff9adb83d80"},{"count":60,"glory":187557,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":50,"glory":177091,"unionId":3,"username":"0x6f721d423e5b97f9740ad404371c48dce4a9c173"},{"count":40,"glory":106003,"unionId":3,"username":"0x19474fde19b47a36cc26ae93d46ebbcde83fa56c"},{"count":30,"glory":103564,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"count":30,"glory":99398,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":20,"glory":84614,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"count":20,"glory":63736,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":10,"glory":52550,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":10,"glory":44062,"unionId":2,"username":"0x44a0ab343ba3c4d86e2eb7835ee995a22c6a72fb"},{"count":9,"glory":38537,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"count":8,"glory":30169,"unionId":3,"username":"0xb4c18d231d6f50eae516581a385b255b802b9e03"}],"id":"rewardglobalstate","seasonEnd":true,"unionGloryRankInfo":[[],[{"glory":44062,"unionId":2,"username":"0x44a0ab343ba3c4d86e2eb7835ee995a22c6a72fb"}],[{"glory":922883,"unionId":3,"username":"0xbd7da5cc162ccc58502eb93361e157ce19a32fd8"},{"glory":219403,"unionId":3,"username":"0x678452d7a5199a0d6216affb3ecf9ff9adb83d80"},{"glory":187557,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":177091,"unionId":3,"username":"0x6f721d423e5b97f9740ad404371c48dce4a9c173"},{"glory":106003,"unionId":3,"username":"0x19474fde19b47a36cc26ae93d46ebbcde83fa56c"},{"glory":103564,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"glory":99398,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":84614,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"glory":63736,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":52550,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"glory":38537,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"glory":30169,"unionId":3,"username":"0xb4c18d231d6f50eae516581a385b255b802b9e03"}],[]],"unionGlorySum":2085505,"unionRewardResult":[{"count":221.26127724460022,"glory":922883,"unionId":3,"username":"0xbd7da5cc162ccc58502eb93361e157ce19a32fd8"},{"count":52.60188779216545,"glory":219403,"unionId":3,"username":"0x678452d7a5199a0d6216affb3ecf9ff9adb83d80"},{"count":44.96680660079932,"glory":187557,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":42.45758221629773,"glory":177091,"unionId":3,"username":"0x6f721d423e5b97f9740ad404371c48dce4a9c173"},{"count":25.414228208515443,"glory":106003,"unionId":3,"username":"0x19474fde19b47a36cc26ae93d46ebbcde83fa56c"},{"count":24.829477752390908,"glory":103564,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"count":23.83067890031431,"glory":99398,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":20.28621365089031,"glory":84614,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"count":15.280711386450763,"glory":63736,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":12.598866941100598,"glory":52550,"unionId":3,"username":"0x76d339e8db09d0e0aebd1a1330e5ec10f2634ca2"},{"count":9.239249006835275,"glory":38537,"unionId":3,"username":"0x7aaa84e9e0f9af03c45f346854a7f336181e89fb"},{"count":7.233020299639656,"glory":30169,"unionId":3,"username":"0xb4c18d231d6f50eae516581a385b255b802b9e03"}],"unionWinId":3}
-const contractAddressInput = rewardStr["contractAddressInput"]
-const gloryReward = rewardStr.gloryRewardResult;
-const unionReward = rewardStr.unionRewardResult;
-let addressList = []
-let rankReward = []
-for(let i = 0; i< gloryReward.length; i++ ){
-    if( addressList.indexOf(gloryReward[i].username) == -1){
-        addressList.push(gloryReward[i].username)
-    }
-    rankReward.push(gloryReward[i].count)
-}
-let finalReward = []
-let unionCheck = []
-let unionOutputReward = new Array(addressList.length).fill(0)
-for(let index in addressList){
-    finalReward.push(rankReward[index])
-}
-outputReward("rank reward", addressList, finalReward)
-unionCheck = new Array( finalReward.length ).fill( false )
-let unionSumGlory = 0
-for(let i in unionReward){
-    let iOfAddr =  addressList.indexOf(unionReward[i].username)
-    if(iOfAddr == -1){
-        continue
-    }
-    if( unionCheck[iOfAddr] == false ){
-        unionSumGlory += unionReward[i].glory
-        unionCheck[iOfAddr] = true
-    }
-}
-unionCheck = new Array( finalReward.length ).fill( false )
-for(let i in unionReward){
-    let iOfAddr =  addressList.indexOf(unionReward[i].username)
-    if(iOfAddr == -1){
-        continue
-    }
-    if( unionCheck[iOfAddr] == false ){
-        finalReward[iOfAddr] += parseInt(((unionReward[i].glory / unionSumGlory ) * 500).toFixed())
-        unionOutputReward[iOfAddr] += parseInt(((unionReward[i].glory / unionSumGlory ) * 500).toFixed())
-        unionCheck[iOfAddr] = true
-    }
-}
-outputReward("union 3 win reward", addressList, unionOutputReward)
-let out = []
-for(let i in addressList){
-    out.push(
-        {
-            address: addressList[i],
-            rose: finalReward[i]
+function handleRewardInfo(){
+    const contractAddressInput = rewardStr["contractAddressInput"]
+    const gloryReward = rewardStr.gloryRewardResult;
+    const unionReward = rewardStr.unionRewardResult;
+    let out = []
+    let addressList = []
+    for(let i = 0; i< gloryReward.length; i++ ){
+        if( addressList.indexOf(gloryReward[i].username) == -1){
+            addressList.push(gloryReward[i].username)
         }
-    )
+        out.push(
+            {
+                address: gloryReward[i].username,
+                unionId: gloryReward[i].unionId,
+                gloryReward: gloryReward[i].count,
+                unionReward: 0,
+                hash: '0x4301447c708635ee123cd4818940435db8e7801d8d324908dbbe932a3c150f13'
+            }
+        )
+    }
+    for(let i in unionReward){
+        let iOfAddr =  addressList.indexOf(unionReward[i].username)
+        if(iOfAddr == -1){
+            continue
+        }
+        out[iOfAddr].unionReward = parseFloat(unionReward[i].count.toFixed(6))
+    }
+    //console.log("total reward")
+    //console.log(out)
+    return out
 }
-console.log("total reward")
-console.log(out)
 
 
 
 
 
-// const web3 = new Web3('https://emerald.oasis.dev')
-// const contractAddress = '0xD839e3eF8f1cD3cA0A851CEc2E82f340863054A3'
-// const privateKey = process.env.PK
-// // 4. Create contract instance
+
+
+
+const web3 = new Web3('https://emerald.oasis.dev')
+//const contractAddress = '0xD839e3eF8f1cD3cA0A851CEc2E82f340863054A3'
+const privateKey = process.env.PK
+// 4. Create contract instance
 // const incrementer = new web3.eth.Contract(ABI.abi, contractAddress);
 
 // let conRewardInput = []
@@ -115,5 +97,39 @@ console.log(out)
 //   console.log(`Tx successful with hash: ${createReceipt.transactionHash}`);
 // };
 
-// 9. Call increment function
-//increment()
+function wait(ms) {
+    return new Promise(resolve =>setTimeout(() =>resolve(), ms));
+};
+
+async function transferETH( to, unionReward, gloryReward ){
+    console.log(`Send ${unionReward} + ${gloryReward} to ${to}`);
+    await wait(2000)
+    const createTransaction = await web3.eth.accounts.signTransaction(
+        {
+          from: "0x04C535c9F175cB8980B43617fB480412c7E341E4",
+          to: to,
+          data: web3.utils.toHex(`Congrats on Winning https://leagueofthrones.com/ 2nd Season. Your rewards are ${unionReward} for the team rewards and ${gloryReward} for glory ranking rewards.`),
+          gas: 50000,
+          value: web3.utils.toWei((unionReward + gloryReward).toString(), 'ether')
+        },
+       privateKey
+    );
+    const createReceipt = await web3.eth.sendSignedTransaction(createTransaction.rawTransaction);
+    console.log(`Tx successful with hash: ${createReceipt.transactionHash}`);
+    return createReceipt.transactionHash
+}
+
+//transferETH()
+
+async function send(){
+    let out = handleRewardInfo()
+    for(let i = 0; i < out.length; i++)
+    {
+        console.log(i)
+        let txHash = await transferETH(out[i].address, out[i].unionReward, out[i].gloryReward)
+        out[i].hash = txHash
+    }
+    console.log(out)
+}
+
+send()
