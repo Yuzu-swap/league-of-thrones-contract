@@ -47,6 +47,8 @@ struct SeasonRecord{
     //reservation open ready end
     uint256[] seasonTimeConfig;
     SeasonStatus seasonStatus;
+    uint256 maxUnionDiffNum;
+
 }
 
 struct SeaSonInfoResult{
@@ -57,17 +59,18 @@ struct SeaSonInfoResult{
 struct SeasonStatusResult{
     uint256 sumPlayerNum;
     uint256[] unionsPlayerNum;
+    uint256 maxUnionDiffNum;
 }
 
-contract LeagueOfThrones is Ownable{
+contract LeagueOfThronesV2 is Ownable{
 
-    event signUpInfo( string seasonId, address player, uint256 unionId, uint256[] extraGeneralIds);
+    event signUpInfo( string seasonId, address player, uint256 unionId, uint256[] extraGeneralIds,uint256 []originNFTIds,uint256 originUnionId);
     event startSeasonInfo( string seasonId, uint256 playerLimit, address rewardAddress, uint256 rewardAmount1, uint256 rewardAmount2, uint256[] rankConfigFromTo, uint256[] rankConfigValue, uint256[] seasonTimeConfig);
     event endSeasonInfo( string seasonId, uint256 unionId, address[] playerAddresses, uint256[] glorys, uint256 unionSumGlory);
     event sendRankRewardInfo( string seasonId, address player, uint256 rank, uint256 amount);
     event sendUnionRewardInfo( string seasonId, address player, uint256 glory, uint256 amount);
     event rechargeInfo( string seasonId, address player, uint256 rechargeId,uint256 amount, uint256 totalAmount);
-    mapping( string => SeasonRecord) seasonRecords;
+    mapping( string => SeasonRecord) public seasonRecords;
     string public nowSeasonId;
 
     constructor() public onlyOwner{
@@ -83,28 +86,35 @@ contract LeagueOfThrones is Ownable{
         uint256 rewardAmount2, 
         uint256[] memory rankConfigFromTo,
         uint256[] memory rankConfigValue,
-        uint256[] memory seasonTimeConfig
+        uint256[] memory seasonTimeConfig,
+        uint256 maxUnionDiffNum
         ) external onlyOwner payable {
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Invalid, "Season can not start repeat");
         require(seasonTimeConfig.length == 4, "time config length error" );
+        require(maxUnionDiffNum > 0, "maxUnionDiffNum must above zero" );
 
         uint256 rewordAmount = rewardAmount1 + rewardAmount2;
-        if(rewardAddress == address(0x0)){
-            require( msg.value == rewordAmount, "Check the ETH amount" );
+        //BSC version modify ,no need to pre transfer
+        if (false) {
+            if(rewardAddress == address(0x0)){
+                require( msg.value == rewordAmount, "Check the ETH amount" );
+            }
+            else{
+                IERC20 token = IERC20(rewardAddress);
+                uint256 allowance = token.allowance(msg.sender, address(this));
+                require(allowance >= rewordAmount, "Check the token allowance");
+                token.transferFrom(msg.sender, address(this), rewordAmount);
+            }
         }
-        else{
-            IERC20 token = IERC20(rewardAddress);
-            uint256 allowance = token.allowance(msg.sender, address(this));
-            require(allowance >= rewordAmount, "Check the token allowance");
-            token.transferFrom(msg.sender, address(this), rewordAmount);
-        }
+
 
         sRecord.seasonStatus = SeasonStatus.WaitForNTF;
         sRecord.rewardAddress = rewardAddress;
         sRecord.reward1Amount = rewardAmount1;
         sRecord.reward2Amount = rewardAmount2;
         sRecord.playerLimit = playerLimit;
+        sRecord.maxUnionDiffNum = maxUnionDiffNum;
         require(rankConfigFromTo.length == rankConfigValue.length * 2, "rewardConfig length error");
         uint256 sumReward = 0;
         bool indexRight = true;
@@ -136,7 +146,6 @@ contract LeagueOfThrones is Ownable{
 
     function getNFTAddresses(string memory seasonId ) public view returns (address[] memory){
         SeasonRecord storage sRecord = seasonRecords[seasonId];
-        require(sRecord.seasonStatus == SeasonStatus.Pending, "Season Status Error");
         address[] memory addresses = new address[](2);
         addresses[0] = sRecord.ntf1ContractAddress;
         addresses[1] = sRecord.ntf2ContractAddress;
@@ -148,31 +157,69 @@ contract LeagueOfThrones is Ownable{
             msg.sender))) % number;
     }
 
-    function signUpGame(string memory seasonId, uint256 ntf1TokenId, uint256 ntf2TokenId) external{
+
+    // params: 
+    //  unionId:  0 for random
+    function signUpGame(string memory seasonId,uint256 unionId, uint256 ntf1TokenId, uint256 ntf2TokenId) external{
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Pending, "Season Status Error");
         require( block.timestamp >= sRecord.seasonTimeConfig[0] && block.timestamp <= sRecord.seasonTimeConfig[3], "It is not signUp time now");
         require( sRecord.sumPlayers < sRecord.playerLimit, "the number of players has reached the limit");
+        require( unionId >= 0 && unionId <= 4, "unionId error");
+
+
+        // Record original unionId to detect whether the player select random unionId
+        uint256 orginUnionId = unionId;
+        uint256[] memory originNFTIds = new uint256[](2);
+        originNFTIds[0] = ntf1TokenId;
+        originNFTIds[1] = ntf2TokenId;
+
+
+
+
+        // find wheather player has signUp and get union's player number
+        uint256[] memory unionPlayerNum = new uint256[](5);
+        uint256 minumUnionPlayerNum = sRecord.playerLimit;
+
         bool hasSignUp = false;
         for( uint i = 1 ; i <= 4 ; i ++ ){
             UnionRecord storage unionRecord = sRecord.unionRecords[i];
-            if(unionRecord.status == MappingStatus.Invalid ){
-                continue;
-            }
-            else{
+            if(unionRecord.status != MappingStatus.Invalid ){
+                unionPlayerNum[i] = unionRecord.playerAddresses.length;
                 ExtraGeneralIds storage extraIds =  unionRecord.playerExtraGeneralIds[msg.sender];
                 if(extraIds.status == MappingStatus.Valid){
                     hasSignUp = true;
                     break;
                 }
             }
+
+            if(unionPlayerNum[i] < minumUnionPlayerNum){
+                minumUnionPlayerNum = unionPlayerNum[i];
+            }
         }
         require(hasSignUp == false , "player has signUp");
-        sRecord.sumPlayers ++ ;
-        uint unionId = sRecord.sumPlayers % 4 ;
-        if(unionId == 0) {
-            unionId = 4;
+        // random unionId
+        if (unionId!=0){
+            // unionId maxUnionDiffNum check
+            require(unionPlayerNum[unionId] - minumUnionPlayerNum < sRecord.maxUnionDiffNum, "unionId maxUnionDiffNum check error");
+        }else{
+            // random unionId of which player number is not above maxUnionDiffNum + currentUnionPlayerNum
+            uint256[] memory unionIdsList = new uint256[](4);
+            uint256 unionIdsListLen = 0;
+            for( uint i = 1 ; i <= 4 ; i ++ ){
+                if(unionPlayerNum[i] - minumUnionPlayerNum < sRecord.maxUnionDiffNum){
+                    // add to unionIdsList
+                    unionIdsList[unionIdsListLen] = i;
+                    unionIdsListLen ++ ;
+                }
+            }
+
+            // random unionId by block.timestamp
+            unionId = unionIdsList[uint(keccak256(abi.encodePacked(block.timestamp,block.difficulty, msg.sender))) % unionIdsListLen];
         }
+
+        // update season record
+        sRecord.sumPlayers ++ ;
         sRecord.unionIdMapping[msg.sender] = unionId;
         UnionRecord storage unionRecord = sRecord.unionRecords[unionId];
         if(unionRecord.status == MappingStatus.Invalid){
@@ -181,28 +228,37 @@ contract LeagueOfThrones is Ownable{
             unionRecord.playerAddresses = new address[](0);
         }
         unionRecord.playerAddresses.push(msg.sender);
-        IERC721 ntf1Contract = IERC721(sRecord.ntf1ContractAddress);
-        IERC721 ntf2Contract = IERC721(sRecord.ntf2ContractAddress);
+
+        //Random extra general
         ExtraGeneralIds storage extraIds = unionRecord.playerExtraGeneralIds[msg.sender];
         extraIds.generalIds = new uint256[](0);
         extraIds.status = MappingStatus.Valid;
-        try ntf1Contract.ownerOf(ntf1TokenId) returns(address owner){
-            if(owner == msg.sender){
-                extraIds.generalIds.push(random(4) + 7);
-            }
-        }
-        catch{
 
-        }
-        try ntf2Contract.ownerOf(ntf2TokenId) returns(address owner){
-            if(owner == msg.sender){
-                extraIds.generalIds.push(random(4) + 11);
+        if(sRecord.ntf1ContractAddress != 0x0000000000000000000000000000000000000000){
+            IERC721 ntf1Contract = IERC721(sRecord.ntf1ContractAddress);
+            try ntf1Contract.ownerOf(ntf1TokenId) returns(address owner){
+                if(owner == msg.sender){
+                    extraIds.generalIds.push(random(4) + 7);
+                }
+            }
+            catch{
+
             }
         }
-        catch{
-            
+
+
+        if(sRecord.ntf2ContractAddress != 0x0000000000000000000000000000000000000000){
+            IERC721 ntf2Contract = IERC721(sRecord.ntf2ContractAddress);
+            try ntf2Contract.ownerOf(ntf2TokenId) returns(address owner){
+                if(owner == msg.sender){
+                    extraIds.generalIds.push(random(4) + 11);
+                }
+            }
+            catch{
+                
+            }
         }
-        emit signUpInfo(seasonId , msg.sender, unionId, extraIds.generalIds);
+        emit signUpInfo(seasonId , msg.sender, unionId, extraIds.generalIds, originNFTIds, orginUnionId);
     }
 
     function setRechargeToken(string memory seasonId, address tokenAddress) public onlyOwner {
@@ -265,7 +321,7 @@ contract LeagueOfThrones is Ownable{
     function getSeasonStatus( string memory seasonId ) public view returns ( SeasonStatusResult memory ){
         SeasonRecord storage sRecord = seasonRecords[seasonId];
         require(sRecord.seasonStatus == SeasonStatus.Pending, "Season Status Error");
-        SeasonStatusResult memory re = SeasonStatusResult( sRecord.sumPlayers , new uint256[](4));
+        SeasonStatusResult memory re = SeasonStatusResult( sRecord.sumPlayers , new uint256[](4),sRecord.maxUnionDiffNum);
         for( uint i = 1 ; i <= 4 ; i ++ ){
             UnionRecord storage unionRecord = sRecord.unionRecords[i];
             if(unionRecord.status == MappingStatus.Invalid ){
@@ -359,4 +415,9 @@ contract LeagueOfThrones is Ownable{
         }
     }
 }
+
+
+
+
+
 

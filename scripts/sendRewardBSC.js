@@ -2,15 +2,28 @@ const Web3 = require("web3")
 const ABI = require('../abi/MultiTransferHelper.json')
 const https = require('https');
 const { ethers } = require("hardhat");
-const Decimal = require("decimal.js")
+const {Configs} = require("./config.js")
+const Decimals = require("decimal.js");
+const fs  = require("fs");
 
 
-//Curl https://app.leagueofthrones.com/web/state/rewardglobalstate
+const network = process.env.HARDHAT_NETWORK
+console.log("Network ",network)
+const config = Configs[network]
+if(!config){
+  console.log("No config for network ",network)
+  return
+}
+
+
+const NativeToken = "0x0000000000000000000000000000000000000000"
+
+
+
 
 async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-
 
 
 function outputReward(type, addressList, reward)
@@ -112,12 +125,13 @@ function wait(ms) {
 async function transferETH( to, unionReward, gloryReward ){
     console.log(`Send ${unionReward} + ${gloryReward} to ${to}`);
     await wait(2000)
+    const singers = await ethers.getSigners()
+    const wallet = singers[0].address
     const createTransaction = await web3.eth.accounts.signTransaction(
         {
-          from: "0x04C535c9F175cB8980B43617fB480412c7E341E4",
+          from: wallet,
           to: to,
           data: web3.utils.toHex(`Congrats on Winning https://leagueofthrones.com/ 2nd Season. Your rewards are ${unionReward} for the team rewards and ${gloryReward} for glory ranking rewards.`),
-          gas: 50000,
           value: web3.utils.toWei((unionReward + gloryReward).toString(), 'ether')
         },
        privateKey
@@ -127,18 +141,29 @@ async function transferETH( to, unionReward, gloryReward ){
     return createReceipt.transactionHash
 }
 
-async function transferErc20(tokenAddr, to, unionReward, gloryReward ){
+async function transferErc20(tokenAddr, to, unionReward, gloryReward ,decimal,run){
     console.log(`Send ${unionReward} + ${gloryReward} to ${to}`);
-   
+    if(run){
+        await wait(2000)
+    }
     const Erc20 = await ethers.getContractAt("ERC20",tokenAddr);
-    const decimal = await Erc20.decimals()
 
-    const amount = new Decimal(unionReward + gloryReward).mul(10**decimal).toFixed(0)
+    if(!decimal){
+        decimal = 18
+    }
+    const total =  new Decimals(unionReward + gloryReward).mul(10**decimal).toFixed(0)
+    console.log("transferErc20 total is ", total)
+    if ( parseInt(total) == 0){
+        return "zero amount"
+    }
 
-    const res = await Erc20.transfer(to,amount)
-
-    console.log(`Tx successful with hash: res `,res, " amount ",amount)
-    return res.hash
+    if (run){
+        const res = await Erc20.transfer(to, web3.utils.toWei((unionReward + gloryReward).toString(), 'ether'))
+        console.log(`Tx successful with hash: res`,res)
+        return res.hash
+    }else{
+        return ""
+    }
 }
 
 async function getContent(url) {
@@ -160,10 +185,9 @@ async function getContent(url) {
 
 
 
-async function sendReward(contractAddr, sid,rewardToken, run ){
+async function sendReward(contractAddr, sid,rewardToken,rewardDecimal, run ){
 
-    const rewardStr = await getContent("https://app.leagueofthrones.com/web/state/rewardglobalstate/" + sid )
-    
+    const rewardStr = await getContent("https://app.leagueofthrones.com/web/state/rewardglobalstate/" + sid)
     console.log("reward str are ", rewardStr)
     const reward = JSON.parse(rewardStr)
 
@@ -171,26 +195,38 @@ async function sendReward(contractAddr, sid,rewardToken, run ){
     const LOTV2 = await ethers.getContractAt("LeagueOfThronesV2", contractAddr)
 
     const rewardTokenIns = await ethers.getContractAt("ERC20", rewardToken)
-    const rewardBalance = await rewardTokenIns.balanceOf(contractAddr)
-    await LOTV2.withdraw(rewardToken,rewardBalance)
-    console.log("reward balance is ", rewardBalance.toString())
+    const singers = await ethers.getSigners()
+    const wallet = singers[0].address
+
+    console.log("wallet is ",wallet)
+    const rewardBalance = await rewardTokenIns.balanceOf(wallet)
+    console.log("reward balance is ", parseFloat(rewardBalance.toString())/1e18)
+
+    const robotWallets = getRobotWallets()
 
     for(let i = 0; i < out.length; i++)
     {
+
         console.log(i)
         let txHash = "fake"
-        if (rewardToken.toLocaleLowerCase()  == "rose"){ 
+        if (rewardToken.toLocaleLowerCase()  == NativeToken){ 
             if (run){
                 txHash = await transferETH(out[i].address, out[i].unionReward, out[i].gloryReward)
             }
         }else{
-            if (run){
-                txHash = await transferErc20(rewardToken,out[i].address, out[i].unionReward, out[i].gloryReward)
-            }
+            txHash = await transferErc20(rewardToken,out[i].address, out[i].unionReward, out[i].gloryReward,rewardDecimal,run)
+            await sleep(4000)
         }
         out[i].hash = txHash
+        out[i].isRobot = robotWallets[out[i].address.toLocaleLowerCase()] ? 1 : 0
     }
     console.log(out)
+
+    const totalRobotReward = out.filter( i=>i.isRobot ).reduce((a,b)=>a+b.unionReward+b.gloryReward,0)
+    const totalReward = out.reduce((a,b)=>a+b.unionReward+b.gloryReward,0)
+    console.log("total robot reward is ",totalRobotReward)
+    console.log("total robot reward is ",totalReward)
+
 }
 
 
@@ -200,14 +236,21 @@ async function testSend(){
     console.log("Res is ",res)
 }
 
-async function withdrawReward(contractAddr,rewardToken) {
-    const LOTV2 = await ethers.getContractAt("LeagueOfThronesV2", contractAddr)
-    const rewardTokenIns = await ethers.getContractAt("ERC20", rewardToken)
-    const rewardBalance = await rewardTokenIns.balanceOf(contractAddr)
-    const res= await LOTV2.withdraw(rewardToken,rewardBalance)
-    console.log("withdraw res is ",res)
+
+function getRobotWallets() {
+    const walletFile = "/data/newproject/league-of-thrones/throne-underlying/src/BotLogic/BotJS/data/wallets.txt"
+    const  res  = {}
+    fs.readFileSync(walletFile, 'utf8').split('\n').forEach(function(line){
+        res[line.split(",")[0].toLocaleLowerCase()] = 1
+    });
+    return res
 }
 
-//sendReward("0x9A43e76Bf6361de1a80325A319cDB4f1927c0841","prod-20230521-1","0xf02b3e437304892105992512539F769423a515Cb",true)
-//sendReward("0x9A43e76Bf6361de1a80325A319cDB4f1927c0841","prod-oasis-2023-07-11-1","0xdC19A122e268128B5eE20366299fc7b5b199C8e3",true)
-//withdrawReward("0x9A43e76Bf6361de1a80325A319cDB4f1927c0841","0xdC19A122e268128B5eE20366299fc7b5b199C8e3")
+
+const {playerLimit,nftsAddrs,contractAddr,rechargeToken,rewardToken,halfRewardAmount,rewardDecimal} = config
+
+
+sendReward(contractAddr,"prod-bsc-2023-12-25-1-2",rewardToken,rewardDecimal,false)
+
+//prod-bsc-2023-12-22-2-1
+//prod-bsc-2023-12-25-1-2
